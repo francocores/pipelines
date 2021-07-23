@@ -1,0 +1,54 @@
+name: iOS starter workflow
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  unit-tests:
+    name: Slather report
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install slather
+        run: gem install slather
+
+      #- name: Install pods
+      #  run: pod install
+
+      - name: Run Unit Tests
+        run: xcodebuild -project "./ios/App/App.xcodeproj" -scheme "App" -destination "platform=iOS Simulator,name=iPhone 12,OS=latest" clean test | xcpretty
+
+      - name: Generate report
+        run: slather coverage --html --scheme ./ios/App/App ./ios/App/App.xcodeproj
+
+      - name: Upload slather report
+        uses: actions/upload-artifact@v2
+        with:
+          name: Slather Report
+          path: html/*
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependency-check
+        run: brew update && brew install dependency-check
+
+      - name: dependency-check run
+        run: dependency-check --out . --scan .
+
+      - name: Upload dependency-check report
+        uses: actions/upload-artifact@v2
+        with:
+          name: Dependency Check report
+          path: dependency-check-report.html
